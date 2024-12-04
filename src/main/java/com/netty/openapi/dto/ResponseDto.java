@@ -1,35 +1,47 @@
 package com.netty.openapi.dto;
 
 public class ResponseDto {
-    private String status;
-    private String message;
-    private String data;
+    private final String status;
+    private final String code;
+    private final String message;
+    private final Data data;
 
     private ResponseDto(Builder builder) {
         this.status = builder.status;
+        this.code = builder.code;
         this.message = builder.message;
         this.data = builder.data;
     }
 
-    public String getStatus() {
-        return status;
+    public Data getData() {
+        return data;
     }
 
-    public String getData() {
-        return data;
+    public String getCode() {
+        return code;
     }
 
     public String getMessage() {
         return message;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public static class Builder {
         private String status;
+        private String code;
         private String message;
-        private String data;
+        private Data data;
 
         public Builder status(String status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder code(String code) {
+            this.code = code;
             return this;
         }
 
@@ -38,7 +50,7 @@ public class ResponseDto {
             return this;
         }
 
-        public Builder data(String data) {
+        public Builder data(Data data) {
             this.data = data;
             return this;
         }
