@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @WebServlet("/api/*")
 public class OpenApiCall extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(OpenApiCall.class);
-    private static final String baseUrl = "https://apis.data.go.kr/1613000/HWSPR02";
+    private final ObjectMapper mapper = new ObjectMapper();
     private String apiKey;
 
     @Override
@@ -45,21 +45,22 @@ public class OpenApiCall extends HttpServlet {
             throw new ServletException("API Key not found");
     }
 
-    // 공공 데이터 가져오기
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    // Netty에서 http 호출 처리
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String uri = request.getRequestURI();
         logger.trace("uri: {}", uri);
 
         // 공공 임대 주택
         if (uri.endsWith("rentals"))
             fetchAndCacheData("/rsdtRcritNtcList", request, response);
-        // 공공 분양 주택
+            // 공공 분양 주택
         else if(uri.endsWith("sales"))
-            fetchAndCacheData("/ltRsdtRcritNtcList",request, response);
+            fetchAndCacheData("/ltRsdtRcritNtcList", request, response);
         else{
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(new ObjectMapper().writeValueAsString(new ResponseDto.Builder().status("error").message("Invalid URI").build()));
+            response.getWriter().write(mapper.writeValueAsString(new ResponseDto.Builder().status("error").message("Invalid URI").build()));
         }
     }
 
@@ -72,14 +73,14 @@ public class OpenApiCall extends HttpServlet {
         InputStream in = request.getInputStream();
         RequestDto requestDto = null;
         if (in.available() > 0)
-            requestDto = new ObjectMapper().readValue(in, RequestDto.class);
+            requestDto = mapper.readValue(in, RequestDto.class);
         // TODO: url 컨버팅?
         URL apiUrl = new URL(getBaseUrl(url, apiKey, requestDto));
 
         HttpURLConnection conn = null;
         BufferedReader reader = null;
-        BufferedWriter writer = null;
-        ResponseDto resp = null;
+
+        ResponseDto resp;
         try {
             conn = (HttpURLConnection) apiUrl.openConnection();
             conn.setRequestMethod("GET");
@@ -95,8 +96,7 @@ public class OpenApiCall extends HttpServlet {
                     builder.append(inputLine);
                 }
                 // body 이후의 값만 넘기도록 변경
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(builder.toString());
+                JsonNode rootNode = mapper.readTree(builder.toString());
 
                 JsonNode headerNode = rootNode.path("response").path("header");
                 String resultCode = headerNode.path("resultCode").asText();
@@ -126,22 +126,20 @@ public class OpenApiCall extends HttpServlet {
             } else{
                 resp = new ResponseDto.Builder().status("error").code("999").message(conn.getResponseMessage()).build();
             }
-            // 데이터를 클라이언트로 전송
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            writer = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8));
-            String respJson = new ObjectMapper().writeValueAsString(resp);
-            writer.write(respJson);
-            writer.flush();
+            sendResponse(response, resp);
+
+        } catch (IOException e) {
+            logger.error("api call failed : (url : {}, cause : {})", url, e.getMessage());
+            sendResponse(response, new ResponseDto.Builder().status("error").code("999").message(e.getMessage()).build());
         }
         finally {
             if (reader != null) try { reader.close(); } catch (Exception e) {}
-            if (writer != null) try { writer.close(); } catch (Exception e) {}
             if (conn != null) conn.disconnect();
         }
     }
 
     private String getBaseUrl(String url, String apiKey,RequestDto request) {
+        String baseUrl = "https://apis.data.go.kr/1613000/HWSPR02";
         StringBuilder builder = new StringBuilder().append(baseUrl).append(url).append("?serviceKey=").append(apiKey);
 
         if (request != null) {
@@ -162,5 +160,16 @@ public class OpenApiCall extends HttpServlet {
         }
 
         return builder.toString();
+    }
+
+    private void sendResponse(HttpServletResponse response, ResponseDto resp) throws IOException {
+        // 데이터를 클라이언트로 전송
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8));
+        String respJson = mapper.writeValueAsString(resp);
+        writer.write(respJson);
+        writer.flush();
+        writer.close();
     }
 }
