@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 @WebServlet("/api/*")
 public class OpenApiCall extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(OpenApiCall.class);
+    private static final String baseUrl = "https://apis.data.go.kr/1613000/HWSPR02";
     private String apiKey;
 
     @Override
@@ -51,10 +52,10 @@ public class OpenApiCall extends HttpServlet {
 
         // 공공 임대 주택
         if (uri.endsWith("rentals"))
-            fetchAndCacheData(this, "/rsdtRcritNtcList", request, response);
+            fetchAndCacheData("/rsdtRcritNtcList", request, response);
         // 공공 분양 주택
         else if(uri.endsWith("sales"))
-            fetchAndCacheData(this, "/ltRsdtRcritNtcList",request, response);
+            fetchAndCacheData("/ltRsdtRcritNtcList",request, response);
         else{
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
@@ -67,13 +68,13 @@ public class OpenApiCall extends HttpServlet {
     * BufferedOutputStream -> 파일을 처리할 때 유용
     * */
     // OpenAPI 데이터 가져오기
-    private static void fetchAndCacheData(OpenApiCall openApiCall, String url, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void fetchAndCacheData(String url, HttpServletRequest request, HttpServletResponse response) throws IOException {
         InputStream in = request.getInputStream();
         RequestDto requestDto = null;
         if (in.available() > 0)
             requestDto = new ObjectMapper().readValue(in, RequestDto.class);
         // TODO: url 컨버팅?
-        URL apiUrl = new URL(openApiCall.getBaseUrl(url, openApiCall.apiKey, requestDto));
+        URL apiUrl = new URL(getBaseUrl(url, apiKey, requestDto));
 
         HttpURLConnection conn = null;
         BufferedReader reader = null;
@@ -141,7 +142,6 @@ public class OpenApiCall extends HttpServlet {
     }
 
     private String getBaseUrl(String url, String apiKey,RequestDto request) {
-        String baseUrl = "https://apis.data.go.kr/1613000/HWSPR02";
         StringBuilder builder = new StringBuilder().append(baseUrl).append(url).append("?serviceKey=").append(apiKey);
 
         if (request != null) {
