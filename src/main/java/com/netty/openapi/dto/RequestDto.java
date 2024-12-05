@@ -2,14 +2,16 @@ package com.netty.openapi.dto;
 
 public class RequestDto {
     private final String reqNo;
+    private final String reqUrl;
     private final String brtcCode;
     private final String signguCode;
     private final String pageNo;
     private final String yearMtBegin;
     private final String yearMtEnd;
 
-    public RequestDto(String reqNo, String brtcCode, String signguCode, String pageNo, String yearMtBegin, String yearMtEnd) {
+    public RequestDto(String reqNo, String reqUrl, String brtcCode, String signguCode, String pageNo, String yearMtBegin, String yearMtEnd) {
         this.reqNo = reqNo;
+        this.reqUrl = reqUrl;
         this.brtcCode = brtcCode;
         this.signguCode = signguCode;
         this.pageNo = pageNo;
@@ -19,6 +21,9 @@ public class RequestDto {
 
     public String getReqNo() {
         return reqNo;
+    }
+    public String getReqUrl() {
+        return reqUrl;
     }
 
     public String getBrtcCode() {

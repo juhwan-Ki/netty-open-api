@@ -2,7 +2,7 @@ package com.netty.openapi.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netty.openapi.dto.Data;
+import com.netty.openapi.common.ApiResponse;
 import com.netty.openapi.dto.RequestDto;
 import com.netty.openapi.dto.ResponseDto;
 import org.apache.logging.log4j.LogManager;
@@ -60,7 +60,7 @@ public class OpenApiCall extends HttpServlet {
         else{
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(mapper.writeValueAsString(new ResponseDto.Builder().status("error").message("Invalid URI").build()));
+            response.getWriter().write(mapper.writeValueAsString(ApiResponse.error("Invalid URI")));
         }
     }
 
@@ -80,7 +80,7 @@ public class OpenApiCall extends HttpServlet {
         HttpURLConnection conn = null;
         BufferedReader reader = null;
 
-        ResponseDto resp;
+        ApiResponse<ResponseDto> resp;
         try {
             conn = (HttpURLConnection) apiUrl.openConnection();
             conn.setRequestMethod("GET");
@@ -108,29 +108,19 @@ public class OpenApiCall extends HttpServlet {
                     String totalCount = bodyNode.path("totalCount").asText();
                     String numOfRows = bodyNode.path("numOfRows").asText();
                     String pageNo = bodyNode.path("pageNo").asText();
-                    resp = new ResponseDto.Builder()
-                            .status("success")
-                            .code(resultCode)
-                            .message(resultMsg)
-                            .data(new Data.Builder()
-                                    .totalCount(totalCount)
-                                    .numOfRows(numOfRows)
-                                    .pageNo(pageNo)
-                                    .data(itemNode.toString())
-                                    .build())
-                            .build();
+                    resp = ApiResponse.ok(new ResponseDto.Builder().totalCount(totalCount).numOfRows(numOfRows).pageNo(pageNo).data(itemNode.toString()).build());
                 } else {
-                    resp = new ResponseDto.Builder().status("error").code(resultCode).message(resultMsg).build();
+                    resp = ApiResponse.error(resultMsg);
                 }
                 // TODO: 전송하기 전에 캐싱 하는 기능 추가해야함
             } else{
-                resp = new ResponseDto.Builder().status("error").code("999").message(conn.getResponseMessage()).build();
+                resp = ApiResponse.error("Http error : " + conn.getResponseMessage());
             }
             sendResponse(response, resp);
 
         } catch (IOException e) {
             logger.error("api call failed : (url : {}, cause : {})", url, e.getMessage());
-            sendResponse(response, new ResponseDto.Builder().status("error").code("999").message(e.getMessage()).build());
+            sendResponse(response, ApiResponse.error("Http error : " + e.getMessage()));
         }
         finally {
             if (reader != null) try { reader.close(); } catch (Exception e) {}
@@ -162,7 +152,7 @@ public class OpenApiCall extends HttpServlet {
         return builder.toString();
     }
 
-    private void sendResponse(HttpServletResponse response, ResponseDto resp) throws IOException {
+    private void sendResponse(HttpServletResponse response, ApiResponse<ResponseDto> resp) throws IOException {
         // 데이터를 클라이언트로 전송
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

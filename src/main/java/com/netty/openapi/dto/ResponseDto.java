@@ -1,56 +1,40 @@
 package com.netty.openapi.dto;
 
 public class ResponseDto {
-    private final String status;
-    private final String code;
-    private final String message;
-    private final Data data;
+    private final String totalCount;
+    private final String numOfRows;
+    private final String pageNo;
+    private final String data;
 
     private ResponseDto(Builder builder) {
-        this.status = builder.status;
-        this.code = builder.code;
-        this.message = builder.message;
+        this.totalCount = builder.totalCount;
+        this.numOfRows = builder.numOfRows;
+        this.pageNo = builder.pageNo;
         this.data = builder.data;
     }
 
-    public Data getData() {
-        return data;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
     public static class Builder {
-        private String status;
-        private String code;
-        private String message;
-        private Data data;
+        private String totalCount;
+        private String numOfRows;
+        private String pageNo;
+        private String data;
 
-        public Builder status(String status) {
-            this.status = status;
+        public Builder totalCount(String totalCount) {
+            this.totalCount = totalCount;
             return this;
         }
 
-        public Builder code(String code) {
-            this.code = code;
+        public Builder numOfRows(String numOfRows) {
+            this.numOfRows = numOfRows;
             return this;
         }
 
-        public Builder message(String message) {
-            this.message = message;
+        public Builder pageNo(String pageNo) {
+            this.pageNo = pageNo;
             return this;
         }
 
-        public Builder data(Data data) {
+        public Builder data(String data) {
             this.data = data;
             return this;
         }
