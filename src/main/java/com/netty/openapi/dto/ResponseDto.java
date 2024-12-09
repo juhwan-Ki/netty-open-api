@@ -1,10 +1,12 @@
 package com.netty.openapi.dto;
 
 public class ResponseDto {
-    private final String totalCount;
-    private final String numOfRows;
-    private final String pageNo;
-    private final String data;
+    private String totalCount;
+    private String numOfRows;
+    private String pageNo;
+    private String data;
+
+    public ResponseDto() {}
 
     private ResponseDto(Builder builder) {
         this.totalCount = builder.totalCount;
@@ -42,5 +44,21 @@ public class ResponseDto {
         public ResponseDto build() {
             return new ResponseDto(this);
         }
+    }
+
+    public String getTotalCount() {
+        return totalCount;
+    }
+
+    public String getNumOfRows() {
+        return numOfRows;
+    }
+
+    public String getPageNo() {
+        return pageNo;
+    }
+
+    public String getData() {
+        return data;
     }
 }

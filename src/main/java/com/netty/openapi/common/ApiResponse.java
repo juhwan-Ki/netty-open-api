@@ -1,9 +1,15 @@
 package com.netty.openapi.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ApiResponse <T> {
     private String status;
+    @JsonProperty("message")
     private String message;
+    @JsonProperty("data")
     private T data;
+
+    public ApiResponse() {}
 
     public ApiResponse(String status, String message, T data) {
         this.status = status;
@@ -17,7 +23,7 @@ public class ApiResponse <T> {
     }
 
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>("success", null, data);
+        return new ApiResponse<>("success", "", data);
     }
 
     public static <T> ApiResponse<T> ok(String message) {
@@ -25,7 +31,7 @@ public class ApiResponse <T> {
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>("error", message, null);
+        return new ApiResponse<>("error", message);
     }
 
     public String getStatus() {
