@@ -17,10 +17,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 @WebServlet("/api/*")
 public class OpenApiCall extends HttpServlet {
@@ -113,7 +110,7 @@ public class OpenApiCall extends HttpServlet {
                     resp = ApiResponse.error(resultMsg);
                 }
                 // TODO: 전송하기 전에 캐싱 하는 기능 추가해야함
-            } else{
+            } else {
                 resp = ApiResponse.error("Http error : " + conn.getResponseMessage());
             }
             sendResponse(response, resp);
@@ -129,27 +126,23 @@ public class OpenApiCall extends HttpServlet {
     }
 
     private String getBaseUrl(String url, String apiKey,RequestDto request) {
-        String baseUrl = "https://apis.data.go.kr/1613000/HWSPR02";
-        StringBuilder builder = new StringBuilder().append(baseUrl).append(url).append("?serviceKey=").append(apiKey);
-
-        if (request != null) {
-            Map<String, String> params = new LinkedHashMap<>();
-            params.put("brtcCode", request.getBrtcCode());
-            params.put("signguCode", request.getSignguCode());
-            params.put("pageNo", request.getPageNo());
-            params.put("yearMtBegin", request.getYearMtBegin());
-            params.put("yearMtEnd", request.getYearMtEnd());
-
-            String queryString = params.entrySet().stream()
-                    .filter(entry -> entry.getValue() != null) // null 값 제외
-                    .map(entry -> entry.getKey() + "=" + entry.getValue())
-                    .collect(Collectors.joining("&")); // "&"로 연결
-
-            if (!queryString.isEmpty())
-                builder.append(queryString);
-        }
-
-        return builder.toString();
+        return "https://apis.data.go.kr/1613000/HWSPR02" + url + "?serviceKey=" + apiKey;
+//        if (request != null) {
+//            Map<String, String> params = new LinkedHashMap<>();
+//            params.put("brtcCode", request.getBrtcCode());
+//            params.put("signguCode", request.getSignguCode());
+//            params.put("pageNo", request.getPageNo());
+//            params.put("yearMtBegin", request.getYearMtBegin());
+//            params.put("yearMtEnd", request.getYearMtEnd());
+//
+//            String queryString = params.entrySet().stream()
+//                    .filter(entry -> entry.getValue() != null) // null 값 제외
+//                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+//                    .collect(Collectors.joining("&")); // "&"로 연결
+//
+//            if (!queryString.isEmpty())
+//                builder.append(queryString);
+//        }
     }
 
     private void sendResponse(HttpServletResponse response, ApiResponse<ResponseDto> resp) throws IOException {
