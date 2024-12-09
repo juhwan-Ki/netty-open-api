@@ -1,6 +1,8 @@
 package com.netty.openapi.server;
 
 import com.netty.openapi.server.handler.ApiCallHandler;
+import com.netty.openapi.server.handler.ServerCustomDecoder;
+import com.netty.openapi.server.handler.ServerCustomEncoder;
 import com.netty.openapi.server.handler.RouterHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -8,10 +10,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.CharsetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,10 +35,11 @@ public class NettyServer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         // TODO : Codec Handler 추가
-                        socketChannel.pipeline().addLast(new HttpServerCodec());
-                        socketChannel.pipeline().addLast(new HttpObjectAggregator(65536));
-                        socketChannel.pipeline().addLast(new RouterHandler());
-                        socketChannel.pipeline().addLast(new ApiCallHandler());
+                        ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8), new StringEncoder(CharsetUtil.UTF_8));
+                        pipeline.addLast(new ServerCustomDecoder(), new ServerCustomEncoder());
+                        pipeline.addLast(new RouterHandler());
+                        pipeline.addLast(new ApiCallHandler());
                     }
                 })
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
