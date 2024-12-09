@@ -2,7 +2,7 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} [%t] %-5level: %msg%n%throwable"/>
+            <PatternLayout charset="UTF-8" pattern="%d{ISO8601} [%t] %-5level: %msg%n%throwable"/>
         </Console>
     </Appenders>
 
