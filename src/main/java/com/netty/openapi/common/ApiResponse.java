@@ -1,12 +1,8 @@
 package com.netty.openapi.common;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ApiResponse <T> {
     private String status;
-    @JsonProperty("message")
     private String message;
-    @JsonProperty("data")
     private T data;
 
     public ApiResponse() {}
