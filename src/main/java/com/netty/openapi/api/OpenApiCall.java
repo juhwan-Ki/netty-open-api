@@ -46,7 +46,7 @@ public class OpenApiCall extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String uri = request.getRequestURI();
-        logger.trace("uri: {}", uri);
+        logger.trace("url: {}", uri);
 
         // 공공 임대 주택
         if (uri.endsWith("rentals"))
@@ -72,7 +72,7 @@ public class OpenApiCall extends HttpServlet {
         if (in.available() > 0)
             requestDto = mapper.readValue(in, RequestDto.class);
         // TODO: url 컨버팅?
-        URL apiUrl = new URL(getBaseUrl(url, apiKey, requestDto));
+        URL apiUrl = new URL(getBaseUrl(url, requestDto));
 
         HttpURLConnection conn = null;
         BufferedReader reader = null;
@@ -113,6 +113,7 @@ public class OpenApiCall extends HttpServlet {
             } else {
                 resp = ApiResponse.error("Http error : " + conn.getResponseMessage());
             }
+            // json으로 데이터 전송
             sendResponse(response, resp);
 
         } catch (IOException e) {
@@ -125,8 +126,9 @@ public class OpenApiCall extends HttpServlet {
         }
     }
 
-    private String getBaseUrl(String url, String apiKey,RequestDto request) {
+    private String getBaseUrl(String url, RequestDto request) {
         return "https://apis.data.go.kr/1613000/HWSPR02" + url + "?serviceKey=" + apiKey;
+        // TODO : request 추가
 //        if (request != null) {
 //            Map<String, String> params = new LinkedHashMap<>();
 //            params.put("brtcCode", request.getBrtcCode());
