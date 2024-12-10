@@ -1,9 +1,6 @@
 package com.netty.openapi.server;
 
-import com.netty.openapi.server.handler.ApiCallHandler;
-import com.netty.openapi.server.handler.ServerCustomDecoder;
-import com.netty.openapi.server.handler.ServerCustomEncoder;
-import com.netty.openapi.server.handler.RouterHandler;
+import com.netty.openapi.server.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -34,10 +31,9 @@ public class NettyServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        // TODO : Codec Handler 추가
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8), new StringEncoder(CharsetUtil.UTF_8));
-                        pipeline.addLast(new ServerCustomDecoder(), new ServerCustomEncoder());
+                        pipeline.addLast(new MessageCodec());
                         pipeline.addLast(new RouterHandler());
                         pipeline.addLast(new ApiCallHandler());
                     }
