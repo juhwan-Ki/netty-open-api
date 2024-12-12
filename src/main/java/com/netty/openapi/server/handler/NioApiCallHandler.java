@@ -2,6 +2,7 @@ package com.netty.openapi.server.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netty.openapi.common.ApiResponse;
+import com.netty.openapi.common.Constants;
 import com.netty.openapi.dto.RequestDto;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -10,10 +11,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 
 public class NioApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
     private static final Logger logger = LogManager.getLogger(NioApiCallHandler.class);
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RequestDto req) throws Exception {
@@ -56,20 +52,20 @@ public class NioApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
                     }
                 });
         // http로 tomcat api 호출
-        httpBootStrap.connect("127.0.0.1", 8080).addListener(new ChannelFutureListener() {
+        httpBootStrap.connect(Constants.HOST, Constants.HTTP_PORT).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 // 성공했을 때 응답 처리
                 if(future.isSuccess()) {
                     logger.info("Successfully connected");
-                    ByteBuf buffer = Unpooled.copiedBuffer(mapper.writeValueAsString(req), StandardCharsets.UTF_8);
                     FullHttpRequest request = new DefaultFullHttpRequest(
                             HttpVersion.HTTP_1_1, // HTTP 버전 1,1
                             HttpMethod.POST,      // Http Method
                             req.getReqUrl()       // 요청 url
                     );
+                    ByteBuf buffer = Unpooled.copiedBuffer(Constants.MAPPER.writeValueAsString(req), StandardCharsets.UTF_8);
                     // 헤더 설정
-                    request.headers().set(HttpHeaderNames.HOST, "127.0.0.1");
+                    request.headers().set(HttpHeaderNames.HOST, Constants.HOST);
                     request.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                     request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
                     request.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
@@ -81,7 +77,7 @@ public class NioApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
                 } else {
                     logger.error("Failed to connect");
                     // TCP 채널에 데이터 전송
-                    ctx.writeAndFlush(mapper.writeValueAsString(ApiResponse.error(future.cause().getMessage())));
+                    ctx.writeAndFlush(Constants.MAPPER.writeValueAsString(ApiResponse.error(future.cause().getMessage())));
                 }
             }
         });

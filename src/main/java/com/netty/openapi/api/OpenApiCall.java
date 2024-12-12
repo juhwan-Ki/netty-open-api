@@ -3,6 +3,7 @@ package com.netty.openapi.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netty.openapi.common.ApiResponse;
+import com.netty.openapi.common.Constants;
 import com.netty.openapi.dto.RequestDto;
 import com.netty.openapi.dto.ResponseDto;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 @WebServlet("/api/*")
 public class OpenApiCall extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(OpenApiCall.class);
-    private final ObjectMapper mapper = new ObjectMapper();
     private String apiKey;
 
     @Override
@@ -61,7 +61,7 @@ public class OpenApiCall extends HttpServlet {
         else{
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(mapper.writeValueAsString(ApiResponse.error("Invalid URI")));
+            response.getWriter().write(Constants.MAPPER.writeValueAsString(ApiResponse.error("Invalid URI")));
         }
     }
 
@@ -79,7 +79,7 @@ public class OpenApiCall extends HttpServlet {
             do {
                 builder.append(str);
             } while ((str = reader.readLine()) != null);
-            requestDto = mapper.readValue(builder.toString(), RequestDto.class);
+            requestDto = Constants.MAPPER.readValue(builder.toString(), RequestDto.class);
         }
         logger.info("requestDto: {}", requestDto);
 
@@ -104,7 +104,7 @@ public class OpenApiCall extends HttpServlet {
                     builder.append(inputLine);
                 }
                 // body 이후의 값만 넘기도록 변경
-                JsonNode rootNode = mapper.readTree(builder.toString());
+                JsonNode rootNode = Constants.MAPPER.readTree(builder.toString());
 
                 JsonNode headerNode = rootNode.path("response").path("header");
                 String resultCode = headerNode.path("resultCode").asText();
@@ -165,7 +165,7 @@ public class OpenApiCall extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8));
-        String respJson = mapper.writeValueAsString(resp);
+        String respJson = Constants.MAPPER.writeValueAsString(resp);
         writer.write(respJson);
         writer.flush();
         writer.close();

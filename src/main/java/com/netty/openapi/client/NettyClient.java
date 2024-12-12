@@ -2,6 +2,7 @@ package com.netty.openapi.client;
 
 import com.netty.openapi.client.handler.MessageEncoder;
 import com.netty.openapi.client.handler.ResultHandler;
+import com.netty.openapi.common.Constants;
 import com.netty.openapi.dto.RequestDto;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -25,10 +26,10 @@ public class NettyClient {
 
     public static void main(String[] args) {
         NettyClient client = new NettyClient();
-        client.startClient("127.0.0.1", 8081);
+        client.startClient();
     }
 
-    public void startClient(String host, int port) {
+    public void startClient() {
         loopGroup = new NioEventLoopGroup();
 
             Bootstrap bootstrap = new Bootstrap();
@@ -45,7 +46,7 @@ public class NettyClient {
 
             // TODO : 다른 방법으로 클라이언트를 생성하도록 변경 필요
             for (int i = 0; i < 10; i++) {
-                ChannelFuture future = bootstrap.connect(host, port);
+                ChannelFuture future = bootstrap.connect(Constants.HOST, Constants.HTTP_PORT);
                 int cnt = i;
                 String url;
                 if(cnt / 2 == 0) url = "/api/rentals";
@@ -62,6 +63,7 @@ public class NettyClient {
                     }
                 });
             }
+            logger.info("request success");
     }
 
     public void stopClient() {

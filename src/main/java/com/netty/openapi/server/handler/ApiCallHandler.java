@@ -1,7 +1,7 @@
 package com.netty.openapi.server.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netty.openapi.common.ApiResponse;
+import com.netty.openapi.common.Constants;
 import com.netty.openapi.dto.RequestDto;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 
 public class ApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
     private static final Logger logger = LogManager.getLogger(ApiCallHandler.class);
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RequestDto req) throws Exception {
@@ -44,7 +43,7 @@ public class ApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
             conn.setRequestProperty("Content-Type", "application/json");
             writer =  new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), StandardCharsets.UTF_8));
             // 객체를 JSON으로 변환 후 전송
-            String json = mapper.writeValueAsString(req);
+            String json = Constants.MAPPER.writeValueAsString(req);
             writer.write(json); // JSON 데이터를 전송
             writer.flush();
 
@@ -60,7 +59,7 @@ public class ApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
 
         } catch (Exception e) {
             logger.error("api call failed : (cause : {})", e.getMessage());
-            return mapper.writeValueAsString(ApiResponse.error(e.getMessage()));
+            return Constants.MAPPER.writeValueAsString(ApiResponse.error(e.getMessage()));
         } finally {
             if (writer != null) try { writer.close(); } catch (Exception ignored) {}
             if (reader != null) try { reader.close(); } catch (Exception ignored) {}

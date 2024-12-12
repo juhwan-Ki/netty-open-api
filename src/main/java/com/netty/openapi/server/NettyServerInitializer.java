@@ -1,5 +1,7 @@
 package com.netty.openapi.server;
 
+import com.netty.openapi.common.Constants;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -11,7 +13,7 @@ public class NettyServerInitializer implements ServletContextListener {
         nettyServer = new NettyServer();
         new Thread(() -> {
             try {
-                nettyServer.startServer(8081);
+                nettyServer.startServer(Constants.TCP_PORT);
             } catch (Exception e) {
                 Thread.currentThread().interrupt();
             }
