@@ -17,7 +17,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 @WebServlet("/api/*")
 public class OpenApiCall extends HttpServlet {
@@ -45,6 +48,7 @@ public class OpenApiCall extends HttpServlet {
     // Netty에서 http 호출 처리
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("application/json");
         String uri = request.getRequestURI();
         logger.trace("url: {}", uri);
 
@@ -67,27 +71,34 @@ public class OpenApiCall extends HttpServlet {
     * */
     // OpenAPI 데이터 가져오기
     private void fetchAndCacheData(String url, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        InputStream in = request.getInputStream();
+        BufferedReader reader = request.getReader();
+        StringBuilder builder = new StringBuilder();
         RequestDto requestDto = null;
-        if (in.available() > 0)
-            requestDto = mapper.readValue(in, RequestDto.class);
+        String str = reader.readLine();
+        if(str != null) {
+            do {
+                builder.append(str);
+            } while ((str = reader.readLine()) != null);
+            requestDto = mapper.readValue(builder.toString(), RequestDto.class);
+        }
+        logger.info("requestDto: {}", requestDto);
+
         // TODO: url 컨버팅?
         URL apiUrl = new URL(getBaseUrl(url, requestDto));
-
         HttpURLConnection conn = null;
-        BufferedReader reader = null;
-
         ApiResponse<ResponseDto> resp;
+
         try {
             conn = (HttpURLConnection) apiUrl.openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000); // 연결 타임아웃 (5초)
             conn.setReadTimeout(5000); // 읽기 타임아웃 (5초)
+            conn.setRequestProperty("Content-Type", "application/json");
             int responseCode = conn.getResponseCode();
             // 정상적으로 데이터를 조회
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-                StringBuilder builder = new StringBuilder();
+                builder.setLength(0);
                 String inputLine;
                 while ((inputLine = reader.readLine()) != null) {
                     builder.append(inputLine);
@@ -116,35 +127,37 @@ public class OpenApiCall extends HttpServlet {
             // json으로 데이터 전송
             sendResponse(response, resp);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("api call failed : (url : {}, cause : {})", url, e.getMessage());
-            sendResponse(response, ApiResponse.error("Http error : " + e.getMessage()));
+            sendResponse(response, ApiResponse.error("server error"));
         }
         finally {
-            if (reader != null) try { reader.close(); } catch (Exception e) {}
-            if (conn != null) conn.disconnect();
+            reader.close();
+            if (conn != null)
+                conn.disconnect();
         }
     }
 
     private String getBaseUrl(String url, RequestDto request) {
-        return "https://apis.data.go.kr/1613000/HWSPR02" + url + "?serviceKey=" + apiKey;
-        // TODO : request 추가
-//        if (request != null) {
-//            Map<String, String> params = new LinkedHashMap<>();
+        StringBuilder builder = new StringBuilder("https://apis.data.go.kr/1613000/HWSPR02" + url + "?serviceKey=" + apiKey);
+        if (request != null) {
+            Map<String, String> params = new LinkedHashMap<>();
+            params.put("pageNo", request.getPageNo());
 //            params.put("brtcCode", request.getBrtcCode());
 //            params.put("signguCode", request.getSignguCode());
-//            params.put("pageNo", request.getPageNo());
 //            params.put("yearMtBegin", request.getYearMtBegin());
 //            params.put("yearMtEnd", request.getYearMtEnd());
-//
-//            String queryString = params.entrySet().stream()
-//                    .filter(entry -> entry.getValue() != null) // null 값 제외
-//                    .map(entry -> entry.getKey() + "=" + entry.getValue())
-//                    .collect(Collectors.joining("&")); // "&"로 연결
-//
-//            if (!queryString.isEmpty())
-//                builder.append(queryString);
-//        }
+
+            String queryString = params.entrySet().stream()
+                    .filter(entry -> entry.getValue() != null) // null 값 제외
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.joining("&")); // "&"로 연결
+
+            if (!queryString.isEmpty())
+                builder.append(queryString);
+        }
+
+        return builder.toString();
     }
 
     private void sendResponse(HttpServletResponse response, ApiResponse<ResponseDto> resp) throws IOException {
