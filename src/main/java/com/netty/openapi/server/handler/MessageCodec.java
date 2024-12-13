@@ -15,7 +15,7 @@ public class MessageCodec extends MessageToMessageCodec<String, ApiResponse<Resp
     // 서버 데이터 변환(DTO -> JSON)
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, ApiResponse<ResponseDto> resp, List<Object> list) throws Exception {
-        list.add(Constants.MAPPER.writeValueAsString(resp));
+        list.add(Constants.MAPPER.writeValueAsString(resp) + "\n");
     }
 
     // 클라이언트에서 넘어온 데이터 변환(json -> DTO)

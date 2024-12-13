@@ -37,7 +37,7 @@ public class ApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
+            conn.setReadTimeout(15000);
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setRequestProperty("Content-Type", "application/json");

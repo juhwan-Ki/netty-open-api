@@ -54,10 +54,10 @@ public class OpenApiCall extends HttpServlet {
 
         // 공공 임대 주택
         if (uri.endsWith("rentals"))
-            fetchAndCacheData("/rsdtRcritNtcList", request, response);
+            fetchAndCacheData(Constants.API_RENTAL_URL, request, response);
             // 공공 분양 주택
         else if(uri.endsWith("sales"))
-            fetchAndCacheData("/ltRsdtRcritNtcList", request, response);
+            fetchAndCacheData(Constants.API_SALES_URL, request, response);
         else{
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
@@ -92,7 +92,7 @@ public class OpenApiCall extends HttpServlet {
             conn = (HttpURLConnection) apiUrl.openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000); // 연결 타임아웃 (5초)
-            conn.setReadTimeout(5000); // 읽기 타임아웃 (5초)
+            conn.setReadTimeout(15000); // 읽기 타임아웃 (5초)
             conn.setRequestProperty("Content-Type", "application/json");
             int responseCode = conn.getResponseCode();
             // 정상적으로 데이터를 조회
@@ -139,7 +139,7 @@ public class OpenApiCall extends HttpServlet {
     }
 
     private String getBaseUrl(String url, RequestDto request) {
-        StringBuilder builder = new StringBuilder("https://apis.data.go.kr/1613000/HWSPR02" + url + "?serviceKey=" + apiKey);
+        StringBuilder builder = new StringBuilder(Constants.API_BASE_URL + url + "?serviceKey=" + apiKey);
         if (request != null) {
             Map<String, String> params = new LinkedHashMap<>();
             params.put("pageNo", request.getPageNo());
@@ -154,7 +154,7 @@ public class OpenApiCall extends HttpServlet {
                     .collect(Collectors.joining("&")); // "&"로 연결
 
             if (!queryString.isEmpty())
-                builder.append(queryString);
+                builder.append("&").append(queryString);
         }
 
         return builder.toString();

@@ -34,7 +34,7 @@ public class RouterHandler extends ChannelInboundHandlerAdapter {
             case "3": // connection close 요청
                 ctx.writeAndFlush(ApiResponse.ok("connection closed"));
                 logger.info("connection closed");
-                ctx.close();
+                ctx.channel().close();
                 break;
         }
     }

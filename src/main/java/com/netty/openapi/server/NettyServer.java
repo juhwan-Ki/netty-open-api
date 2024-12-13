@@ -36,7 +36,8 @@ public class NettyServer {
                         pipeline.addLast(new MessageCodec());
                         pipeline.addLast(new RouterHandler());
 //                        pipeline.addLast(new ApiCallHandler());  // 동기 방식
-                        pipeline.addLast(new NioApiCallHandler()); // 비동기 방식
+//                        pipeline.addLast(new NioApiCallHandler()); // 비동기 방식
+                        pipeline.addLast(new NioOpenApiCallHandler()); // Netty로 Http 비동기 호출 방식
                     }
                 })
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
