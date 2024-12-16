@@ -52,17 +52,18 @@ public class NettyClient {
     }
 
     private void clientConnect(Bootstrap bootstrap, int clientId) {
-        bootstrap.connect(Constants.HOST, Constants.TCP_PORT).addListener( new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                // 연결 성공 시 tcp 요청
-                if(channelFuture.isSuccess()) {
-                    tcpConnect(channelFuture.channel(), clientId);
-                } else {
-                    logger.error("connect failed : {}", channelFuture.cause().getMessage());
-                    logger.info("client reconnecting...");
-                    tcpReconnect(bootstrap, clientId);
-                }
+        bootstrap.connect(Constants.HOST, Constants.TCP_PORT)
+                .addListener( new ChannelFutureListener() { // 작업이 완료될 시 호출할 리스너를 등록
+                    @Override
+                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                        // 연결 성공 시 tcp 요청
+                        if(channelFuture.isSuccess()) {
+                            tcpConnect(channelFuture.channel(), clientId);
+                        } else {
+                            logger.error("connect failed : {}", channelFuture.cause().getMessage());
+                            logger.info("client reconnecting...");
+                            tcpReconnect(bootstrap, clientId);
+                        }
             }
         });
     }
@@ -74,8 +75,7 @@ public class NettyClient {
             @Override
             public void run() {
                 try {
-                    String url = clientId / 2 == 0 ? Constants.API_RENTAL_URL : Constants.API_SALES_URL;
-                    RequestDto req = sendRequest(url);
+                    RequestDto req = sendRequest(clientId);
                     logger.info("Request : {}",  req);
                     // 메시지 전송
                     channel.writeAndFlush(req);
@@ -93,11 +93,13 @@ public class NettyClient {
             }
         });
     }
+
     // 서버에서 오류나면 다시 연결
     private void tcpReconnect(Bootstrap bootstrap, int clientId) {
         if(!reconnectMap.containsKey(clientId)) {
             reconnectMap.put(clientId, 1);
         }
+
         int reconnectCnt = reconnectMap.get(clientId);
         // 3회 이상 이면 연결 끊어버림
         if(reconnectCnt > 3) {
@@ -116,16 +118,18 @@ public class NettyClient {
         }, 30, TimeUnit.SECONDS);
     }
 
-    private RequestDto sendRequest(String url) {
+    private RequestDto sendRequest(int clientId) {
         int ranNum = (int) (Math.random() * 3 + 1);
-        // 1번 일때는 healthCheck 2번은 apiCall 3번 close
-        String num = String.valueOf(ranNum);
+        String pageNo = String.valueOf((int) (Math.random() * 9 + 1));
+        // 1 : healthCheck, 3 : close
         if(ranNum == 1 || ranNum == 3) {
-            return new RequestDto(num);
+            return new RequestDto(String.valueOf(ranNum));
         }
+        // apiCall
         else if(ranNum == 2) {
-            return new RequestDto(num, url, num);
+            return new RequestDto(String.valueOf(ranNum), clientId / 2 == 0 ? Constants.API_RENTAL_URL : Constants.API_SALES_URL, pageNo);
         }
+        // error
         else {
             throw new IllegalArgumentException("Invalid ranNum");
         }
