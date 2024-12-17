@@ -1,5 +1,6 @@
 package com.netty.openapi.server.handler;
 
+import com.netty.openapi.common.ApiKeyManager;
 import com.netty.openapi.common.ApiResponse;
 import com.netty.openapi.common.Constants;
 import com.netty.openapi.dto.RequestDto;
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.SSLException;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,9 +31,9 @@ public class NioOpenApiCallHandler extends SimpleChannelInboundHandler<RequestDt
 
     private void openApiCall(ChannelHandlerContext ctx, RequestDto req) throws SSLException {
         Bootstrap httpBootStrap = new Bootstrap();
-        // ssl 설정?
+        // SSL 설정
         SslContext sslContext = SslContextBuilder.forClient().build();
-        httpBootStrap.group(ctx.channel().eventLoop())
+        httpBootStrap.group(ctx.channel().eventLoop()) // 서버와 같은 eventLoop를 사용하여 추가적인 스레드를 생성하지 않음
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -57,9 +59,9 @@ public class NioOpenApiCallHandler extends SimpleChannelInboundHandler<RequestDt
                             url       // 요청 url
                     );
                     // 헤더 설정
-                    request.headers().set(HttpHeaderNames.HOST, Constants.HOST);
+                    request.headers().set(HttpHeaderNames.HOST, Constants.API_HOST);
                     request.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-                    request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+//                    request.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
                     // Http 채널에 비동기 요청
                     logger.info("Sending request: {}", request);
                     future.channel().writeAndFlush(request);
@@ -72,22 +74,20 @@ public class NioOpenApiCallHandler extends SimpleChannelInboundHandler<RequestDt
         });
     }
 
-    private String getBaseUrl(RequestDto req) {
+    private String getBaseUrl(RequestDto req) throws IOException {
         StringBuilder builder = new StringBuilder(Constants.API_BASE_URL + req.getReqUrl()
-                + "?serviceKey=" + "");
+                + "?serviceKey=" + ApiKeyManager.getApiKey());
 
-        if (req != null) {
-            Map<String, String> params = new LinkedHashMap<>();
-            params.put("pageNo", req.getPageNo());
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("pageNo", req.getPageNo());
 
-            String queryString = params.entrySet().stream()
-                    .filter(entry -> entry.getValue() != null) // null 값 제외
-                    .map(entry -> entry.getKey() + "=" + entry.getValue())
-                    .collect(Collectors.joining("&"));
+        String queryString = params.entrySet().stream()
+                .filter(entry -> entry.getValue() != null) // null 값 제외
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("&"));
 
-            if (!queryString.isEmpty())
-                builder.append("&").append(queryString);
-        }
+        if (!queryString.isEmpty())
+            builder.append("&").append(queryString);
 
         return builder.toString();
     }
