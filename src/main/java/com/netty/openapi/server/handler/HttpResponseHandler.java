@@ -28,16 +28,8 @@ public class HttpResponseHandler extends SimpleChannelInboundHandler<FullHttpRes
         ctx.writeAndFlush(resp);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext innerCtx, Throwable cause) {
-        logger.error("Error processing HTTP response", cause);
-        ctx.writeAndFlush(ApiResponse.error("Error processing HTTP response"));
-    }
-
     private String getApiResponse(FullHttpResponse response) throws IOException {
         String resp = response.content().toString(StandardCharsets.UTF_8);
-        logger.info("api reps : {}",resp);
-
         JsonNode rootNode = Constants.MAPPER.readTree(resp);
         // body 이후의 값만 넘기도록 변경
         JsonNode headerNode = rootNode.path("response").path("header");
@@ -55,5 +47,11 @@ public class HttpResponseHandler extends SimpleChannelInboundHandler<FullHttpRes
         } else {
             return Constants.MAPPER.writeValueAsString(ApiResponse.error(resultMsg));
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext innerCtx, Throwable cause) {
+        logger.error("Error processing HTTP response", cause);
+        ctx.writeAndFlush(ApiResponse.error("Error processing HTTP response"));
     }
 }
