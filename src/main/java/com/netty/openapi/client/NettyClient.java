@@ -22,16 +22,16 @@ import java.util.concurrent.TimeUnit;
 
 public class NettyClient {
     private static final Logger logger = LogManager.getLogger(NettyClient.class);
-    private final Map<Integer, Integer> reconnectMap = new ConcurrentHashMap<>();
+    // 현재는 간단하게 하기 위해 Map을 사용 -> 더 효율적인 다중 처리를 하려면 ChannelGroup을 사용할 수 있음
+    private final Map<Integer, Integer> connectionMap = new ConcurrentHashMap<>();
+
 
     public static void main(String[] args) {
         new NettyClient().startClient();
     }
 
-    // TODO : 모든 채널이 닫히면 클라이언트 종료하는 코드 추가 필요
     public void startClient() {
         EventLoopGroup loopGroup = new NioEventLoopGroup();
-
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(loopGroup)
                 .channel(NioSocketChannel.class)
@@ -46,12 +46,16 @@ public class NettyClient {
                 .option(ChannelOption.SO_KEEPALIVE, true); // 연결을 유지하도록
 
         // n개 클라이언트 생성
-        for (int i = 0; i < 10; i++) {
+        for (int i = 1; i <= 10; i++) {
             clientConnect(bootstrap, i);
         }
     }
 
     private void clientConnect(Bootstrap bootstrap, int clientId) {
+        if(!connectionMap.containsKey(clientId)) {
+            connectionMap.put(clientId, 0);
+        }
+        // connection 요청
         bootstrap.connect(Constants.HOST, Constants.TCP_PORT)
                 .addListener( new ChannelFutureListener() { // 작업이 완료될 시 호출할 리스너를 등록
                     @Override
@@ -96,20 +100,21 @@ public class NettyClient {
 
     // 서버에서 오류나면 다시 연결
     private void tcpReconnect(Bootstrap bootstrap, int clientId) {
-        if(!reconnectMap.containsKey(clientId)) {
-            reconnectMap.put(clientId, 1);
-        }
-
-        int reconnectCnt = reconnectMap.get(clientId);
-        // 3회 이상 이면 연결 끊어버림
+        int reconnectCnt = connectionMap.get(clientId);
+        // 3회가 넘어가면 연결 끊어버림
         if(reconnectCnt > 3) {
             logger.info("client ID : {} closed", clientId);
-            reconnectMap.remove(clientId);
+            connectionMap.remove(clientId);
+            // 모든 connection이 끊어졌으면 서버 종료
+            if(connectionMap.isEmpty()) {
+                logger.info("netty client server closed");
+                bootstrap.config().group().shutdownGracefully();
+            }
             return;
         }
-        logger.info("client ID : {} reconnect cnt : {}", clientId, reconnectCnt);
         // 30초 후 재연결
-        reconnectMap.put(clientId, reconnectCnt + 1);
+        logger.info("client ID : {} reconnect cnt : {}", clientId, reconnectCnt);
+        connectionMap.put(clientId, ++reconnectCnt);
         bootstrap.config().group().schedule(new Runnable() {
             @Override
             public void run() {
