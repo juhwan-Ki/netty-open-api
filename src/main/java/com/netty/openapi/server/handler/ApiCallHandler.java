@@ -31,7 +31,6 @@ public class ApiCallHandler extends SimpleChannelInboundHandler<RequestDto> {
         BufferedWriter writer = null;
         BufferedReader reader = null;
 
-        // TODO : HTTPRequest 객체 사용해보기
         try {
             URL url = new URL("http://localhost:8080" + req.getReqUrl());
             conn = (HttpURLConnection) url.openConnection();

@@ -27,10 +27,10 @@ public class NettyServer {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class) // bossGroup -> 클라이언트와 연결 처리
-                .handler(new LoggingHandler(LogLevel.INFO))
+                .handler(new LoggingHandler(LogLevel.INFO)) // 서버 소켓 채널에 필요한 핸들러 추가
                 .childHandler(new ChannelInitializer<SocketChannel>() { // workerGroup -> 클라이언트의 요청 처리
                     @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                    protected void initChannel(SocketChannel socketChannel) throws Exception { // 클라이언트 응답에 필요한 핸들러 추가
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8), new StringEncoder(CharsetUtil.UTF_8));
                         pipeline.addLast(new MessageCodec());
@@ -45,8 +45,6 @@ public class NettyServer {
         // netty 서버 바인딩
         ChannelFuture future = bootstrap.bind(port).sync();
         logger.info("netty server started on port {}", port);
-        // 서버 종료 대기
-        //future.channel().closeFuture().sync();
     }
 
     public void stop() {

@@ -17,7 +17,6 @@ public class RouterHandler extends ChannelInboundHandlerAdapter {
         ctx.writeAndFlush(ApiResponse.ok("connection success"));
     }
 
-    // TODO : ByteBuf 사용 해보도록 해보자
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         RequestDto req = (RequestDto) msg;
@@ -33,12 +32,13 @@ public class RouterHandler extends ChannelInboundHandlerAdapter {
                 break;
             case "3": // connection close 요청
                 ctx.writeAndFlush(ApiResponse.ok("connection closed"));
-                logger.info("connection closed");
                 ctx.channel().close();
+                logger.info("connection closed");
                 break;
         }
     }
 
+    // 핸들러에서 에러 발생 시 호출
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("handler Error : {}", cause.getMessage());
